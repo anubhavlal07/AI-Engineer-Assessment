@@ -1,6 +1,8 @@
 flowchart TB
     subgraph Ingestion["Ingestion (offline)"]
+        UP["Upload<br/>(UI · API · CLI)"]
         RAW[("data/raw/<br/>PDF · DOCX · MD · TXT")]
+        UP --> RAW
         LOAD["Loader<br/>(per-page text)"]
         CHUNK["Chunker<br/>(token-aware, page-bounded)"]
         EMB1["Embedder<br/>(Gemini embedding-001)"]

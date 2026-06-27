@@ -9,10 +9,12 @@ A suggested running order for the screen recording.
 - Mention stack: Google Gemini (LLM + embeddings), ChromaDB, BM25 + cross-encoder,
   FastAPI, Streamlit.
 
-## 0:30–1:15 — Ingestion
-- Show a couple of files in `data/raw/`.
-- Run `python -m scripts.ingest`. Point out the chunk count and the
-  manifest/incremental skip on a second run.
+## 0:30–1:15 — Ingestion (upload from the UI)
+- In the app sidebar, use **Upload & index** to upload a document live; show the
+  spinner and the success summary (files indexed + chunk count).
+- Open **Manage documents** to show the indexed list (and that a doc can be deleted).
+- (Optional) Mention the CLI/`POST /upload` alternatives and the incremental
+  manifest skip on re-ingest.
 
 ## 1:15–3:00 — Question answering (UI)
 - `streamlit run src/ui/app.py`, sign in.
@@ -21,7 +23,7 @@ A suggested running order for the screen recording.
 - Ask a **follow-up** ("what about ...?") to demonstrate conversation memory /
   query rewriting.
 - Ask an **out-of-scope** question → show the graceful "could not find" response.
-- Give a 👍 / 👎 to show feedback capture.
+- Give a thumbs-up / thumbs-down to show feedback capture.
 
 ## 3:00–4:00 — API
 - Show `GET /health`, then `POST /ask` via the FastAPI `/docs` page with the

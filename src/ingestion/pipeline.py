@@ -73,6 +73,50 @@ def _write_chunk_corpus(chunks: list[Chunk]) -> None:
             fh.write(json.dumps(chunk.to_dict()) + "\n")
 
 
+def list_indexed_documents() -> list[dict]:
+    """Return the indexed documents with their chunk counts, sorted by name."""
+    manifest = _load_manifest()
+    corpus = load_chunk_corpus()
+    counts: dict[str, int] = {}
+    for chunk in corpus.values():
+        counts[chunk.source] = counts.get(chunk.source, 0) + 1
+    # Include manifest entries even if (edge case) they produced zero chunks.
+    sources = set(manifest) | set(counts)
+    return sorted(
+        ({"source": src, "chunks": counts.get(src, 0)} for src in sources),
+        key=lambda d: d["source"],
+    )
+
+
+def delete_document(source: str) -> None:
+    """Remove a single document from every index and from disk.
+
+    Drops its chunks from Chroma and the corpus, rebuilds BM25 over the
+    remainder, rewrites chunks.jsonl + the manifest, and deletes the raw file.
+    """
+    vector_store = VectorStore()
+    vector_store.delete_by_source(source)
+
+    corpus = {
+        cid: c for cid, c in load_chunk_corpus().items() if c.source != source
+    }
+    remaining = list(corpus.values())
+    _write_chunk_corpus(remaining)
+
+    bm25 = BM25Store()
+    bm25.build([c.chunk_id for c in remaining], [c.text for c in remaining])
+    bm25.save()
+
+    manifest = _load_manifest()
+    manifest.pop(source, None)
+    _save_manifest(manifest)
+
+    raw_file = get_settings().raw_path / source
+    if raw_file.exists():
+        raw_file.unlink()
+    logger.info("Deleted document from index: %s", source)
+
+
 def ingest(force: bool = False) -> IngestReport:
     """Run ingestion over the raw directory.
 

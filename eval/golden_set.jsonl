@@ -1,5 +1,9 @@
 {"question": "What is the employee leave policy?", "expected_answer": "Employees are eligible for 24 paid leaves annually.", "expected_sources": ["HR_Policy.pdf"], "type": "factual"}
-{"question": "What is the refund policy?", "expected_answer": "Refunds are allowed within 30 days.", "expected_sources": ["Customer_Policy.pdf"], "type": "factual"}
+{"question": "How many days per week can employees work remotely?", "expected_answer": "Up to two days per week, with manager approval.", "expected_sources": ["HR_Policy.pdf"], "type": "factual"}
+{"question": "How long is maternity leave?", "expected_answer": "Maternity leave is 26 weeks.", "expected_sources": ["HR_Policy.pdf"], "type": "factual"}
+{"question": "What is the refund policy?", "expected_answer": "Refunds are allowed within 30 days of purchase.", "expected_sources": ["Customer_Policy.pdf"], "type": "factual"}
+{"question": "How long does it take to process a refund?", "expected_answer": "Refunds are processed to the original payment method within 7 business days.", "expected_sources": ["Customer_Policy.pdf"], "type": "factual"}
+{"question": "How long is the product warranty?", "expected_answer": "All hardware products carry a one-year limited warranty.", "expected_sources": ["Customer_Policy.pdf"], "type": "factual"}
+{"question": "What is the leave policy and how long is the product warranty?", "expected_answer": "Employees get 24 paid leaves annually; hardware products carry a one-year limited warranty.", "expected_sources": ["HR_Policy.pdf", "Customer_Policy.pdf"], "type": "multi_doc"}
 {"question": "How many vacation days do contractors get?", "expected_answer": "", "expected_sources": [], "type": "out_of_scope"}
-{"question": "Tell me about the company's data retention and the leave policy together.", "expected_answer": "", "expected_sources": ["Compliance.pdf", "HR_Policy.pdf"], "type": "multi_doc"}
-{"question": "policy", "expected_answer": "", "expected_sources": [], "type": "ambiguous"}
+{"question": "What is the policy?", "expected_answer": "", "expected_sources": [], "type": "ambiguous"}

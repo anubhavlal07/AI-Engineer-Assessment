@@ -53,5 +53,15 @@ class Reranker:
             scored.append(cand)
 
         scored.sort(key=lambda c: c.score, reverse=True)
-        kept = [c for c in scored if c.score >= self._settings.rerank_min_score]
-        return kept[: self._settings.rerank_top_n]
+
+        # Keep the top-N candidates by RANK and let the grounded LLM prompt
+        # decide whether they actually answer the question. Absolute
+        # cross-encoder scores vary enormously by document type (terse résumés
+        # and tables score far lower than prose, even when correct), so a fixed
+        # absolute floor as a hard refusal gate causes false refusals. The
+        # optional min-score floor only trims weak tail chunks and can never
+        # empty a non-empty candidate set (we always keep at least the best one).
+        top_n = scored[: self._settings.rerank_top_n]
+        floor = self._settings.rerank_min_score
+        kept = [c for c in top_n if c.score >= floor]
+        return kept or top_n[:1]

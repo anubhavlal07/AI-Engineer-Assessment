@@ -10,11 +10,13 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
 from src.api.auth import require_api_key
+from src.ingestion.loader import SUPPORTED_EXTENSIONS
 from src.api.schemas import (
     AskRequest,
     AskResponse,
@@ -87,6 +89,33 @@ async def ask(req: AskRequest) -> AskResponse:
 @app.post("/ingest", response_model=IngestResponse, dependencies=[Depends(require_api_key)])
 async def ingest_endpoint(force: bool = False) -> IngestResponse:
     report = ingest(force=force)
+    reset_pipeline()  # pick up the new index on next request
+    return IngestResponse(**report.__dict__)
+
+
+@app.post("/upload", response_model=IngestResponse, dependencies=[Depends(require_api_key)])
+async def upload(files: list[UploadFile] = File(...)) -> IngestResponse:
+    raw_dir = get_settings().raw_path
+    raw_dir.mkdir(parents=True, exist_ok=True)
+
+    saved = 0
+    for f in files:
+        ext = Path(f.filename or "").suffix.lower()
+        if ext not in SUPPORTED_EXTENSIONS:
+            raise HTTPException(
+                status_code=415,
+                detail=f"Unsupported file type '{ext}'. Allowed: {sorted(SUPPORTED_EXTENSIONS)}",
+            )
+        content = await f.read()
+        if not content:
+            continue
+        (raw_dir / Path(f.filename).name).write_bytes(content)
+        saved += 1
+
+    if saved == 0:
+        raise HTTPException(status_code=400, detail="No valid files were uploaded.")
+
+    report = ingest()
     reset_pipeline()  # pick up the new index on next request
     return IngestResponse(**report.__dict__)
 

@@ -40,7 +40,10 @@ class Settings(BaseSettings):
     bm25_top_k: int = 20
     rrf_k: int = 60
     rerank_top_n: int = 5
-    rerank_min_score: float = 0.05
+    # Soft floor only (the reranker always keeps at least the top candidate).
+    # 0.0 effectively defers the refusal decision to the grounded LLM prompt,
+    # which is robust across document types; raise it to trim weak tail chunks.
+    rerank_min_score: float = 0.0
 
     # --- Chunking ---
     chunk_tokens: int = 500

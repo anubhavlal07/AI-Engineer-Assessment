@@ -50,6 +50,22 @@ class RAGPipeline:
     def memory(self) -> ConversationMemory:
         return self._memory
 
+    def refresh(self) -> None:
+        """Reload indexes after (re-)ingestion, in place.
+
+        Only the parts that ingestion changes are rebuilt — BM25, the chunk
+        corpus, and the retriever that wraps them. The Chroma vector store uses
+        the same persistent client (already sees new chunks), and the expensive
+        cross-encoder reranker / LLM clients are deliberately left untouched so
+        callers (e.g. the Streamlit cached singleton) get a fast refresh.
+        """
+        self._bm25 = BM25Store()
+        self._bm25.load()
+        self._corpus = load_chunk_corpus()
+        self._retriever = HybridRetriever(
+            self._vector_store, self._bm25, self._embedder, self._corpus
+        )
+
     def is_ready(self) -> bool:
         return self._vector_store.count() > 0
 

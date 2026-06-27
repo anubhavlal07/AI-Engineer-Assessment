@@ -20,7 +20,8 @@ Built for the Anthr-a-sync AI Engineer assignment.
   anti-hallucination contract (temperature 0, JSON mode).
 - **Conversation memory** with history-aware query rewriting for follow-ups.
 - **Spec-compliant API** (`POST /ask` → `{answer, sources:[{document, page}], confidence}`).
-- **Streamlit chat UI** with sources panel, confidence badge, and feedback.
+- **Streamlit chat UI** with in-app document upload + management, sources panel,
+  confidence badge, and feedback.
 - **Evaluation harness** — golden set + retrieval metrics (Hit@k, MRR, Recall@k)
   + LLM-judged faithfulness/relevance + refusal accuracy.
 - **Auth** (API key + UI password) and **Docker** deployment.
@@ -84,9 +85,21 @@ cp .env.example .env        # then edit .env and set GEMINI_API_KEY + API_KEY
 ## Usage
 
 ### 1. Add documents
-Drop your `.pdf` / `.docx` / `.md` / `.txt` files into `data/raw/`.
+Two ways:
+- **From the UI (recommended):** launch the app (step 4) and use the sidebar
+  **Upload & index** control — upload `.pdf` / `.docx` / `.md` / `.txt` files and
+  they're indexed into the shared knowledge base on the spot. A **Manage
+  documents** panel lets you see and delete what's indexed.
+- **From the terminal:** drop files into `data/raw/` and run the ingest command below.
 
-### 2. Ingest (build the index)
+**Try it out-of-the-box** with the bundled sample documents (a synthetic HR policy
+and customer policy that match the questions in `eval/golden_set.jsonl`):
+```bash
+cp sample_docs/* data/raw/      # Windows: copy sample_docs\* data\raw\
+python -m scripts.ingest
+```
+
+### 2. Ingest (build the index — optional if you upload via the UI/API)
 ```bash
 python -m scripts.ingest          # incremental
 python -m scripts.ingest --force  # rebuild from scratch
@@ -114,14 +127,24 @@ Response:
 }
 ```
 
+Upload documents via the API instead of the UI:
+```bash
+curl -X POST http://localhost:8000/upload \
+  -H "X-API-Key: <your API_KEY>" \
+  -F "files=@/path/to/HR_Policy.pdf" -F "files=@/path/to/FAQ.txt"
+```
+
 ### 4. Run the chat UI
 ```bash
 streamlit run src/ui/app.py
 # Sign in with UI_PASSWORD (default: demo)
+# Use the sidebar to upload documents and manage the knowledge base.
 ```
 
 ### 5. Evaluate
-Edit [`eval/golden_set.jsonl`](eval/golden_set.jsonl) to match your documents, then:
+The bundled `eval/golden_set.jsonl` already matches the sample documents, so after
+ingesting them (step 1) you can run the harness as-is. For your own corpus, edit
+the golden set to match:
 ```bash
 python -m eval.run_eval
 # Writes eval/results/report.md and report.json
@@ -141,8 +164,9 @@ docker compose up --build
 |---|---|---|---|
 | GET | `/health` | – | Liveness + index readiness |
 | POST | `/ask` | `X-API-Key` | Ask a question |
-| POST | `/ingest?force=true` | `X-API-Key` | (Re)build the index |
-| POST | `/feedback` | `X-API-Key` | Record 👍/👎 + comment |
+| POST | `/upload` | `X-API-Key` | Upload document(s) (multipart) and index them |
+| POST | `/ingest?force=true` | `X-API-Key` | (Re)build the index from `data/raw/` |
+| POST | `/feedback` | `X-API-Key` | Record thumbs-up/down + comment |
 
 ---
 
@@ -164,8 +188,10 @@ docker compose up --build
 - **Hybrid + re-rank** because pure semantic search misses exact identifiers and
   pure keyword search misses paraphrase; the cross-encoder then maximizes
   precision on the small candidate set.
-- **Threshold-gated answering** — if no chunk clears the relevance bar, the
-  system refuses rather than hallucinates.
+- **Grounding-gated answering** — the reranker keeps the top-N candidates by
+  rank and the strict grounded prompt decides whether they answer the question
+  (robust across document types); retrieval scores inform confidence rather than
+  acting as a brittle absolute cutoff. The system refuses rather than hallucinates.
 - **Confidence is a transparent heuristic** (top rerank score + retrieval
   coverage + model groundedness flag), *not* a calibrated probability.
 
@@ -206,7 +232,8 @@ src/
   ui/app.py              # Streamlit chat
 eval/                    # golden set, metrics, runner
 tests/                   # pytest unit + API tests
-scripts/ingest.py        # CLI ingestion
+scripts/                 # ingest CLI + sample-doc generator
+sample_docs/             # bundled synthetic docs (match the golden set)
 docs/                    # system design, diagram, demo script
 ```
 

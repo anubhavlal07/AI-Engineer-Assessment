@@ -16,6 +16,9 @@ See `docs/architecture.mmd` for the full diagram.
 
 ## 2. Data flow
 
+0. **Add documents.** Files reach `data/raw/` three ways: the Streamlit upload
+   control, the `POST /upload` API endpoint, or by being dropped in directly. UI
+   and API uploads call the same `ingest()` and then refresh the live index.
 1. **Ingest.** Documents in `data/raw/` are parsed per page (PDF/DOCX/MD/TXT),
    split into token-bounded chunks that never cross a page boundary (so each
    chunk cites exactly one page), embedded with Google `gemini-embedding-001`
@@ -59,8 +62,10 @@ See `docs/architecture.mmd` for the full diagram.
 - Strict system prompt: answer only from context, cite every claim, emit a fixed
   "could not find this information" message when context is insufficient.
 - Temperature 0 + JSON-mode structured output.
-- Relevance threshold after re-ranking → if nothing clears it, the answerer
-  short-circuits to the unavailable response with zero confidence.
+- The reranker keeps the top-N candidates by rank and the grounded prompt makes
+  the final answer/refuse decision (robust across document types, since absolute
+  cross-encoder scores vary widely); if retrieval returns nothing at all, the
+  answerer short-circuits to the unavailable response with zero confidence.
 - Ambiguous queries: the model is instructed to state its interpretation or ask a
   brief clarifying question rather than guess.
 

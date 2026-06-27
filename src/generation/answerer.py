@@ -66,16 +66,18 @@ class Answerer:
     ) -> float:
         """Transparent heuristic (NOT a calibrated probability).
 
-        Combines top reranker relevance, retrieval coverage (how many of the
-        returned chunks the model actually used), and the model's self-reported
-        groundedness flag.
+        Leans primarily on signals that are robust across document types: the
+        model's self-reported groundedness and whether it actually cited
+        sources. The absolute reranker score is only a soft bonus, because it
+        is miscalibrated for terse text (e.g. résumés/tables score low even when
+        correct) and must not, by itself, drag a well-grounded, cited answer
+        down to near-zero confidence.
         """
         if not chunks:
             return 0.0
         top_score = max(c.score for c in chunks)
-        coverage = min(len(used), len(chunks)) / len(chunks) if chunks else 0.0
-        grounded_factor = 1.0 if grounded else 0.4
-        raw = (0.6 * top_score + 0.4 * coverage) * grounded_factor
+        cited = 1.0 if used else 0.0
+        raw = 0.45 * (1.0 if grounded else 0.0) + 0.35 * cited + 0.20 * top_score
         return round(max(0.0, min(1.0, raw)), 2)
 
     def answer(
