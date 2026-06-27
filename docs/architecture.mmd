@@ -1,0 +1,36 @@
+flowchart TB
+    subgraph Ingestion["Ingestion (offline)"]
+        RAW[("data/raw/<br/>PDF · DOCX · MD · TXT")]
+        LOAD["Loader<br/>(per-page text)"]
+        CHUNK["Chunker<br/>(token-aware, page-bounded)"]
+        EMB1["Embedder<br/>(Gemini embedding-001)"]
+        RAW --> LOAD --> CHUNK --> EMB1
+        EMB1 --> VS[("Chroma<br/>vector index")]
+        CHUNK --> BM[("BM25<br/>keyword index")]
+        CHUNK --> CJ[("chunks.jsonl<br/>+ manifest")]
+    end
+
+    subgraph Online["Query (online)"]
+        Q["User question"]
+        REW["Query rewrite<br/>(conversation memory)"]
+        HYB["Hybrid retrieval<br/>semantic ∪ BM25 → RRF"]
+        RR["Cross-encoder<br/>re-ranker (top-n)"]
+        GEN["LLM answer<br/>(grounded + citations)"]
+        OUT["answer · sources · confidence"]
+        Q --> REW --> HYB --> RR --> GEN --> OUT
+    end
+
+    VS --> HYB
+    BM --> HYB
+    CJ --> HYB
+    RR -. "below threshold" .-> NA["'Not in knowledge base'"]
+
+    subgraph Interfaces
+        API["FastAPI<br/>/ask /ingest /feedback /health<br/>(X-API-Key auth)"]
+        UI["Streamlit chat UI<br/>(password gate)"]
+    end
+    API --> Q
+    UI --> Q
+    OUT --> API
+    OUT --> UI
+    OUT --> FB[("feedback.jsonl")]

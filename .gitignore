@@ -1,0 +1,33 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Data & indexes (user-provided docs + generated index)
+data/raw/*
+!data/raw/.gitkeep
+data/index/*
+!data/index/.gitkeep
+data/feedback.jsonl
+
+# Eval outputs
+eval/results/*
+!eval/results/.gitkeep
+
+# Model cache
+.cache/
+*.pkl
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Claude Code local config
+.claude/

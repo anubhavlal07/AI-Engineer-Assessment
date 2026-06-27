@@ -1,0 +1,5 @@
+{"question": "What is the employee leave policy?", "expected_answer": "Employees are eligible for 24 paid leaves annually.", "expected_sources": ["HR_Policy.pdf"], "type": "factual"}
+{"question": "What is the refund policy?", "expected_answer": "Refunds are allowed within 30 days.", "expected_sources": ["Customer_Policy.pdf"], "type": "factual"}
+{"question": "How many vacation days do contractors get?", "expected_answer": "", "expected_sources": [], "type": "out_of_scope"}
+{"question": "Tell me about the company's data retention and the leave policy together.", "expected_answer": "", "expected_sources": ["Compliance.pdf", "HR_Policy.pdf"], "type": "multi_doc"}
+{"question": "policy", "expected_answer": "", "expected_sources": [], "type": "ambiguous"}
